@@ -14,7 +14,7 @@ module Backstop::Helpers
   def publisher
     @@publisher ||= Backstop::Publisher.new(Backstop::Config.carbon_urls, :api_key => Backstop::Config.api_key)
   end
-  def send(metric, value, time)
+  def send(metric, value, time=Time.now.to_i)
     begin
       publisher.publish(metric, value, time)
     rescue

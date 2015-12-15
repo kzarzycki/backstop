@@ -88,6 +88,34 @@ module Backstop
       'ok'
     end
 
+    post '/druid' do
+      begin
+        data = JSON.parse(request.body.read)
+      rescue JSON::ParserError
+        halt 400, 'JSON is required'
+      end
+        if data.kind_of? Array
+          data.each do |item|
+            halt 400, 'missing fields' unless (item['metric'] && item['value'])
+            excluded=['feed', 'service', 'host', 'metric', 'value', 'timestamp']
+            metric_suffix=item
+              .sort{|a, b| a[0] <=> b[0]}
+              .select{|k, v| !excluded.include?(k)}
+              .select{|k, v| !k.nil? && !v.nil? }
+              .map! {|k, v| "#{k}=#{v.to_s.gsub(/[\.:]/,'_')}" }
+              .join('.')
+#example:             {"feed"=>"metrics", "timestamp"=>"2015-12-14T15:53:18.176Z", "service"=>"druid/realtime", "host"=>"172.31.9.53:8082", "metric"=>"jvm/gc/time", "value"=> 0, "gcName"=>"ParNew", "source"=>"druid"}
+            host=item['host'].to_s.gsub(/[\.:]/,'_')
+            metric_name="druid.#{item['feed']}.#{item['service']}.#{host}.#{item['metric']}.#{metric_suffix}"
+
+            send(metric_name, item['value'])
+          end 
+        else 
+          halt 400, 'metrics JSON is not an array. '
+        end
+        'ok'
+    end
+
     post '/publish/:name' do
       begin
         data = JSON.parse(request.body.read)
@@ -98,12 +126,18 @@ module Backstop
         if data.kind_of? Array
           data.each do |item|
             item['source'] = params[:name]
-            halt 400, 'missing fields' unless (item['metric'] && item['value'] && item['measure_time'])
-            send("#{item['source']}.#{item['metric']}", item['value'], item['measure_time'])
+            halt 400, 'missing fields' unless (item['metric'] && item['value'])
+            if item['measure_time']
+              send("#{item['source']}.#{item['metric']}", item['value'], item['measure_time'])
+            else
+              send("#{item['source']}.#{item['metric']}", item['value'])
+            end
           end 
         else 
           data['source'] = params[:name]
-          halt 400, 'missing fields' unless (data['metric'] && data['value'] && data['measure_time'])
+
+          halt 400, 'missing fields' unless (data['metric'] && data['value'])
+          send("#{data['source']}.#{data['metric']}", data['value']) unless (data['measure_time'])
           send("#{data['source']}.#{data['metric']}", data['value'], data['measure_time'])
         end
         'ok'
