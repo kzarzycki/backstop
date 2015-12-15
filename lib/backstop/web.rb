@@ -97,10 +97,14 @@ module Backstop
         if data.kind_of? Array
           data.each do |item|
             halt 400, 'missing fields' unless (item['metric'] && item['value'])
-            excluded=['feed', 'service', 'host', 'metric', 'value', 'timestamp']
+#            excluded=['feed', 'service', 'host', 'metric', 'value', 
+#		'timestamp', 'id', 'interval', 'numMetrics', 'numComplexMetrics', 'segment', 'duration', 'threshold',
+#	        'remoteAddress', 'context', 'queryId', 	
+#		]
+	    included=['dataSource', 'type', 'poolKind', 'poolName', 'tier', 'priority']
             metric_suffix=item
               .sort{|a, b| a[0] <=> b[0]}
-              .select{|k, v| !excluded.include?(k)}
+              .select{|k, v| included.include?(k)}
               .select{|k, v| !k.nil? && !v.nil? }
               .map! {|k, v| "#{k}=#{v.to_s.gsub(/[\.:]/,'_')}" }
               .join('.')
