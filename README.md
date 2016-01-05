@@ -4,6 +4,10 @@
 
 Backstop is a simple endpoint for submitting metrics to Graphite. It accepts JSON data via HTTP POST and proxies the data to one or more Carbon/Graphite listeners.
 
+# My (kzarzycki) fork
+This fork is modified to be able to accept metrics from Druid. If I had more time, I would document how to use it. 
+In short, I've added quick & dirty '/druid' endpoint, that can accept metrics and alerts. Please look to backstop/blob/master/lib/backstop/web.rb for more details.
+
 ## Usage
 
 ### Collectd Metrics
